@@ -1,7 +1,7 @@
 from pathlib import Path
 import joblib
 
-from src.creditrisk.logger import setup_logger
+from creditrisk.logger import setup_logger
 
 logger = setup_logger(__name__)
 

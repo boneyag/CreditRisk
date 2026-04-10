@@ -1,7 +1,7 @@
-from src.creditrisk import data
-from src.creditrisk import preprocess
-from src.creditrisk import train
-from src.creditrisk import evaluate
+from creditrisk import data
+from creditrisk import preprocess
+from creditrisk import train
+from creditrisk import evaluate
 
 def main(model_name="lr"):
     df = data.load_typecast_data()

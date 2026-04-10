@@ -1,4 +1,4 @@
-from src.creditrisk.logger import setup_logger
+from creditrisk.logger import setup_logger
 
 import numpy as np
 from sklearn.compose import ColumnTransformer

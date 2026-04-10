@@ -2,7 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-LOGS_DIR = Path(__file__).resolve().parent.parent / "logs"
+LOGS_DIR = Path(__file__).resolve().parent.parent.parent / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
 LEVEL_MAP = {
@@ -33,7 +33,7 @@ def setup_logger(name: str, level: str = "info") -> logging.Logger:
     logger.setLevel(LEVEL_MAP.get(level, logging.INFO))
 
     fmt = logging.Formatter(
-        fmt="%(asctime)s %(levelname)-8s %(name)s %(message)s",
+        fmt="%(asctime)s %(levelname)-8s %(name)s \t %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
     )
 

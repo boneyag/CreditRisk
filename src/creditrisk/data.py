@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-from src.creditrisk.logger import setup_logger
+from creditrisk.logger import setup_logger
 
 logger = setup_logger(__name__)
 

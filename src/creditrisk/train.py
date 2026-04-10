@@ -1,5 +1,5 @@
-from src.creditrisk.logger import setup_logger
-from src.creditrisk.artifacts import save_pipeline
+from creditrisk.logger import setup_logger
+from creditrisk.artifacts import save_pipeline
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline

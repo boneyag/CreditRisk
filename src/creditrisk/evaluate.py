@@ -1,5 +1,5 @@
-from src.creditrisk.logger import setup_logger
-from src.creditrisk.artifacts import load_pipeline
+from creditrisk.logger import setup_logger
+from creditrisk.artifacts import load_pipeline
 
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
 import numpy as np
