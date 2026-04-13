@@ -14,7 +14,14 @@ MODEL_NAMES = {
     "xgb": XGBClassifier
 }
 
-def train_classifier(model_name, preprocessor, X_train, y_train, persist=True):
+def train_classifier(
+    model_name,
+    preprocessor,
+    X_train,
+    y_train,
+    persist=True,
+    manifest_metadata=None,
+):
     if model_name not in MODEL_NAMES:
         logger.error("Unsupported model: %s. Choose from %s", model_name, ", ".join(MODEL_NAMES.keys()))
         return None
@@ -52,6 +59,18 @@ def train_classifier(model_name, preprocessor, X_train, y_train, persist=True):
     logger.info("Trained model: %s", model_name)
 
     if persist:
-        save_pipeline(clf, model_name)
+        metadata = manifest_metadata or {}
+        dataset_version = metadata.get("dataset_version", "unknown")
+        save_pipeline(
+            clf,
+            model_name=model_name,
+            dataset_version=dataset_version,
+            training_data_policy=metadata.get("training_data_policy", "initial"),
+            feature_schema_version=metadata.get("feature_schema_version", "v1"),
+            metrics=metadata.get("metrics"),
+            notes=metadata.get("notes", ""),
+            version=metadata.get("version"),
+            activate=metadata.get("activate", True),
+        )
 
     return clf

@@ -6,9 +6,9 @@ logger = setup_logger(__name__)
 
 DATA_DIR = Path(__file__).parent.parent.parent / 'data'
 
-def load_typecast_data(file_name="Loan_approval_data_2025.csv") -> pd.DataFrame | None:
+def load_typecast_data(dataset_name) -> pd.DataFrame | None:
     try:
-        df = pd.read_csv(DATA_DIR / file_name)
+        df = pd.read_csv(DATA_DIR / dataset_name)
 
         if len(df) != 50000:
             logger.warning(f"The original file should have 50000 records. Found {len(df)}")
@@ -31,6 +31,6 @@ def load_typecast_data(file_name="Loan_approval_data_2025.csv") -> pd.DataFrame 
 
         return df
     except FileNotFoundError:
-        logger.error(f"Could not find {file_name}")
+        logger.error(f"Could not find {dataset_name}")
         return None
     
