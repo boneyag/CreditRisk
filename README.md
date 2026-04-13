@@ -125,6 +125,35 @@ PYTHONPATH=src uv run uvicorn creditrisk.api:app --reload
 
 The API will be available at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
 
+## Run With Docker Compose
+
+Use Docker Compose to build the image, run training once, and then start the API using the trained artifact.
+
+Build and run both services:
+
+```bash
+docker compose up --build
+```
+
+How it works:
+
+- `pipeline` service runs `python -m creditrisk.main --model xgb` and persists artifacts to `./artifacts`.
+- `api` service starts only after pipeline training completes successfully.
+- API is exposed on `http://localhost:8000`.
+
+Common commands:
+
+```bash
+# Start in background
+docker compose up -d --build
+
+# View logs for API
+docker compose logs -f api
+
+# Stop and remove containers
+docker compose down
+```
+
 ### API Endpoints
 
 **GET /health**

@@ -17,28 +17,33 @@ def main(
 ):
     df = data.load_typecast_data(dataset_name)
 
-    if df is not None:
-        X, y = preprocess.data_target_split(df)
-        X = preprocess.feature_engineering(X)
-        X_train, X_test, y_train, y_test = preprocess.partition_data(X, y)
-        preprocessor = preprocess.preprocessing_pipeline(X_train)
-        resolved_dataset_version = dataset_version or Path(dataset_name).stem
-        clf = train.train_classifier(
-            model_name=model_name,
-            preprocessor=preprocessor,
-            X_train=X_train,
-            y_train=y_train,
-            persist=persist,
-            manifest_metadata={
-                "dataset_version": resolved_dataset_version,
-                "training_data_policy": training_data_policy,
-                "feature_schema_version": feature_schema_version,
-                "notes": notes,
-            },
+    if df is None:
+        raise FileNotFoundError(
+            f"Training dataset could not be loaded: {dataset_name}. "
+            f"Resolved data directory: {data.DATA_DIR}"
         )
-        eval_metrics = evaluate.eval_classifier(model_name, X_test, y_test, clf)
 
-        print(f"{model_name} evaluation metrics:\n{eval_metrics}")
+    X, y = preprocess.data_target_split(df)
+    X = preprocess.feature_engineering(X)
+    X_train, X_test, y_train, y_test = preprocess.partition_data(X, y)
+    preprocessor = preprocess.preprocessing_pipeline(X_train)
+    resolved_dataset_version = dataset_version or Path(dataset_name).stem
+    clf = train.train_classifier(
+        model_name=model_name,
+        preprocessor=preprocessor,
+        X_train=X_train,
+        y_train=y_train,
+        persist=persist,
+        manifest_metadata={
+            "dataset_version": resolved_dataset_version,
+            "training_data_policy": training_data_policy,
+            "feature_schema_version": feature_schema_version,
+            "notes": notes,
+        },
+    )
+    eval_metrics = evaluate.eval_classifier(model_name, X_test, y_test, clf)
+
+    print(f"{model_name} evaluation metrics:\n{eval_metrics}")
 
 
 if __name__ == '__main__':
