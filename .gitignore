@@ -11,6 +11,7 @@ wheels/
 
 # temp files
 model_comparison.md
+README.md.old
 
 # data files
 data/realistic-loan-approval-dataset-us-and-canada.zip
