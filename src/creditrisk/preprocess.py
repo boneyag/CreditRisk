@@ -1,6 +1,7 @@
 from creditrisk.logger import setup_logger
 
 import numpy as np
+from pathlib import Path
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
@@ -8,6 +9,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 logger = setup_logger(__name__)
+
+DATA_DIR = Path(__file__).resolve().parent.parent.parent / 'data'
 
 def data_target_split(df):
     y = df['loan_status']
@@ -19,6 +22,12 @@ def partition_data(X, y):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
+    X_train.to_csv(DATA_DIR / 'x_train.csv')
+    X_test.to_csv(DATA_DIR / 'x_test.csv')
+    y_train.to_csv(DATA_DIR / 'y_train.csv')
+    y_test.to_csv(DATA_DIR / 'y_test.csv')
+    logger.info(f"Saved train/test datasets for later use.")
+    
     return X_train, X_test, y_train, y_test
 
 def feature_engineering(X):
