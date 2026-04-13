@@ -1,6 +1,7 @@
 from creditrisk.logger import setup_logger
 
 import numpy as np
+import os
 from pathlib import Path
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -10,7 +11,28 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 logger = setup_logger(__name__)
 
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / 'data'
+def _resolve_data_dir() -> Path:
+    env_dir = os.getenv("CREDITRISK_DATA_DIR")
+    if env_dir:
+        env_path = Path(env_dir)
+        if not env_path.exists():
+            raise FileNotFoundError(
+                f"CREDITRISK_DATA_DIR is set but does not exist: {env_path}"
+            )
+        return env_path
+
+    candidates = []
+    candidates.append(Path(__file__).resolve().parent.parent.parent / "data")
+    if env_dir:
+        candidates.append(Path(env_dir))
+    candidates.append(Path.cwd() / "data")
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    # Fallback to CWD/data to keep local runs predictable.
+    return Path.cwd() / "data"
 
 def data_target_split(df):
     y = df['loan_status']
@@ -22,10 +44,12 @@ def partition_data(X, y):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
-    X_train.to_csv(DATA_DIR / 'x_train.csv')
-    X_test.to_csv(DATA_DIR / 'x_test.csv')
-    y_train.to_csv(DATA_DIR / 'y_train.csv')
-    y_test.to_csv(DATA_DIR / 'y_test.csv')
+    data_path = _resolve_data_dir()
+    data_path.mkdir(parents=True, exist_ok=True)
+    X_train.to_csv(data_path / 'x_train.csv')
+    X_test.to_csv(data_path / 'x_test.csv')
+    y_train.to_csv(data_path / 'y_train.csv')
+    y_test.to_csv(data_path / 'y_test.csv')
     logger.info(f"Saved train/test datasets for later use.")
     
     return X_train, X_test, y_train, y_test

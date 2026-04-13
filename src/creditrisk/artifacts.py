@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -9,7 +10,23 @@ from creditrisk.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-ARTIFACTS_DIR = Path(__file__).resolve().parent.parent.parent / "artifacts"
+def _resolve_artifacts_dir() -> Path:
+    env_dir = os.getenv("CREDITRISK_ARTIFACTS_DIR")
+    candidates = []
+    if env_dir:
+        candidates.append(Path(env_dir))
+    candidates.append(Path.cwd() / "artifacts")
+    candidates.append(Path(__file__).resolve().parent.parent.parent / "artifacts")
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    # Fallback to CWD/artifacts to keep local runs predictable.
+    return Path.cwd() / "artifacts"
+
+
+ARTIFACTS_DIR = _resolve_artifacts_dir()
 ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 MANIFEST_PATH = ARTIFACTS_DIR / "manifest.json"
 
