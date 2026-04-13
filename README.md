@@ -11,12 +11,12 @@ End-to-end credit risk training workflow using a modular Python package under `s
 ```text
 CreditRisk/
 	data/
-		Loan_approval_data_2025.csv
+		data_v1.csv
 	notebooks/
 		credit_risk.ipynb
 		credit_risk2.ipynb
 	artifacts/
-		<model>_pipeline.joblib
+		<model_version>_pipeline.joblib
 	src/creditrisk/
 		__init__.py
 		main.py
@@ -27,6 +27,8 @@ CreditRisk/
 		artifacts.py
 		api.py
 		logger.py
+  tests/
+    test_api.py
 	pyproject.toml
 ```
 
