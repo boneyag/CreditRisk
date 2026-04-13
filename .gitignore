@@ -14,6 +14,11 @@ model_comparison.md
 
 # data files
 data/realistic-loan-approval-dataset-us-and-canada.zip
+data/x_test.csv
+data/y_test.csv
+data/x_train.csv
+data/y_train.csv
+predictions.csv
 
 # artifacts
 artifacts/
