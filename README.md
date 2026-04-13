@@ -1,249 +1,72 @@
-# Credit Risk Modeling
+# 💳 Credit Risk Decision System: End-to-End ML Service
 
-End-to-end credit risk training workflow using a modular Python package under `src/`, with notebooks reserved for exploration and statistical comparison.
+An industry-grade machine learning system designed to automate credit risk adjudication while maintaining high auditability and statistical rigor. This project features a modular Python architecture, automated training pipelines, and a production-ready REST API.
 
-## Project Flow
+## 🎯 Project Goals & SLOs
 
-`load data -> type cast -> feature engineering -> train/test split -> preprocessing -> model training -> evaluation -> save artifact -> serve via API`
+* Scientific Decisioning: Evaluate the statistical significance of model improvements (XGBoost vs. Baseline) to ensure deployment is justified.
+* Auditability: Maintain an immutable record of model versions, training policies, and feature schemas.
+* Risk-Centric Optimization: Model performance is optimized for the detection of high-risk applicants to minimize potential defaults.
 
-## Repository Layout
+## 📊 Statistical Validation & Model Comparison
 
-```text
-CreditRisk/
-	data/
-		data_v1.csv
-	notebooks/
-		credit_risk.ipynb
-		credit_risk2.ipynb
-	artifacts/
-		<model_version>_pipeline.joblib
-	src/creditrisk/
-		__init__.py
-		main.py
-		data.py
-		preprocess.py
-		train.py
-		evaluate.py
-		artifacts.py
-		api.py
-		logger.py
-  tests/
-    test_api.py
-	pyproject.toml
-```
+Before moving to production, we performed a comparative analysis between the baseline (Logistic Regression) and the challenger (XGBoost) to ensure the performance gain was not due to random noise.
 
-## Modules
+| Metric   | Logistic Regression | XGBoost | Delta |
+|----------|---------------------|---------|-------|
+| Accuracy | 0.8897              | 0.9266  | +3.7% |
+| ROC-AUC  | 0.9626              | 0.9836  | +0.21 |
+| F1-Score | 0.88                | 0.92    | +4.5% |
 
-- `data.py`: loads CSV, validates row count, applies memory-friendly dtype casting.
-- `preprocess.py`: target split, feature engineering, train/test split, and sklearn preprocessing pipeline.
-- `train.py`: trains selected model (`lr`, `svc`, `xgb`) using a full sklearn pipeline.
-- `evaluate.py`: evaluates a provided classifier or loads one from disk.
-- `artifacts.py`: saves/loads full fitted pipelines (`preprocessor + classifier`) via joblib with versioning and manifest metadata.
-- `main.py`: orchestrates the full training/evaluation process with CLI argument support for dataset versioning and training policy.
-- `api.py`: FastAPI application for model serving with `/health`, `/model_info`, and `/predict` endpoints. Supports model versioning and immutable artifact management.
+*Note: F1-score is reported for Class 0 (Loan Rejected). In a credit risk context, we prioritize the precision and recall of high-risk identifications to minimize financial exposure.*
 
-## Setup
+#### Rigor Checks (Summary from notebooks/)
+* McNemar’s Test: A McNemar’s test on the paired model errors yielded a $p$-value of $4.1463e-38$. This confirms that the error distributions differ significantly at the $\alpha = 0.05$ level.
+* Bootstrap Analysis: Conducted $10,000$ bootstrap iterations to calculate 95% Confidence Intervals for the accuracy. he CI of the difference in accuracy between XGBoost and Logistic Regression is $[0.0315, 0.0423]$, with an effect size of $3.67\%$. Since the interval does not contain zero, the improvement is statistically robust.
 
-This project uses `uv`.
+## 🏗 System Architecture & Observability
+1. Data & Storage
+Retrieval: `data.py` implements memory-optimized type casting and schema validation for CSV/SQL sources.
 
-1. Create/sync environment and dependencies:
+Artifacts: Fully fitted `sklearn` pipelines (preprocessor + classifier) are serialized with metadata manifests to `artifacts/`.
+
+2. The Training Pipeline (main.py)
+Decoupled training logic allows for high-velocity experimentation:
 
 ```bash
-uv sync
+# Example: Retraining due to data drift
+uv run python -m creditrisk.main --model xgb --dataset-version v1 --training-data-policy initial --notes "Adjusting for drift"
 ```
 
-2. Install the package in editable mode:
+3. Reliability & Evaluation
+API Tests: Automated tests in `tests/test_api.py` validate endpoint responses and input edge cases.
+
+Observability: Structured JSON logging in `api.py` provides an audit trail for every prediction, including the model version and probability score.
+
+## 🚀 Deployment (Docker & Cloud Ready)
+This project is built to eliminate "it works on my machine" issues. The Docker Compose setup orchestrates a sequential workflow:
+
+Pipeline Container: Trains the model and persists the artifact.
+
+API Container: Spins up only after successful training to serve the latest artifact.
 
 ```bash
-uv pip install -e .
-```
-
-## Run Training Pipeline
-
-Train with default settings (XGBoost model, initial data policy):
-
-```bash
-PYTHONPATH=src uv run python -m creditrisk.main
-```
-
-Train with custom settings for versioning and metadata tracking:
-
-```bash
-PYTHONPATH=src uv run python -m creditrisk.main \
-  --model xgb \
-  --dataset-version v1.1 \
-  --training-data-policy combined \
-  --feature-schema-version v1 \
-  --notes "retrained due to drift alert"
-```
-
-### CLI Arguments
-
-- `--data`: Path to training CSV (default: `data/Loan_approval_data_2025.csv`)
-- `--model`: Model type: `lr`, `svc`, or `xgb` (default: `xgb`)
-- `--dataset-version`: Version identifier for dataset (e.g., `v1.0`, `2026-04-12`)
-- `--training-data-policy`: Data selection strategy: `initial`, `combined`, or `new_only` (default: `initial`)
-- `--feature-schema-version`: Version of feature engineering logic (default: `v1`)
-- `--notes`: Metadata notes (e.g., reason for retraining)
-- `--no-persist`: Skip saving the trained pipeline
-
-## Model Selection
-
-Supported model names:
-
-- `lr` (Logistic Regression)
-- `svc` (Support Vector Classifier)
-- `xgb` (XGBoost)
-
-The current default in `main.py` is `xgb`.
-
-## Artifacts
-
-Training saves a full pipeline artifact to:
-
-```text
-artifacts/<model_name>_<datetime>-<dataset_name>_pipeline.joblib
-```
-
-This artifact includes both preprocessing and model, making it ready for API inference.
-
-## Evaluation Outputs
-
-`evaluate.py` returns:
-
-- accuracy
-- ROC-AUC
-- classification report (precision/recall/f1/support)
-
-## Serve via REST API
-
-Start the FastAPI server:
-
-```bash
-PYTHONPATH=src uv run uvicorn creditrisk.api:app --reload
-```
-
-The API will be available at `http://localhost:8000` with interactive docs at `http://localhost:8000/docs`.
-
-## Run With Docker Compose
-
-Use Docker Compose to build the image, run training once, and then start the API using the trained artifact.
-
-Build and run both services:
-
-```bash
+# Build and run the full stack
 docker compose up --build
 ```
 
-How it works:
+## 🛣 Future Roadmap & Risk Mitigation
+Cloud Migration: Transitioning compute to AWS Fargate and storage to S3 for higher scalability.
 
-- `pipeline` service runs `python -m creditrisk.main --model xgb` and persists artifacts to `./artifacts`.
-- `api` service starts only after pipeline training completes successfully.
-- API is exposed on `http://localhost:8000`.
+Observability: Integrating Prometheus metrics to track real-time drift in the debt_to_income_ratio feature.
 
-Common commands:
+Explainability: Incorporating SHAP values directly into the /predict response for adjudicator transparency.
 
-```bash
-# Start in background
-docker compose up -d --build
+Production Reliability: Calculate inference latency ($p95$) with 100% environment parity via Docker.
 
-# View logs for API
-docker compose logs -f api
+## 🛠 Tech Stack
+Core: Python 3.11, uv, scikit-learn, XGBoost.
 
-# Stop and remove containers
-docker compose down
-```
+Serving: FastAPI, Uvicorn, Pydantic.
 
-### API Endpoints
-
-**GET /health**
-```json
-{
-  "model": "xgb",
-  "health": "live",
-  "model_version": "20260413T060654Z-data_v1"
-}
-```
-
-**GET /model_info**
-Returns active model metadata including training policy, feature schema version, metrics, and training notes.
-
-**POST /predict**
-Accepts a loan application as JSON and returns prediction:
-```json
-{
-  "pred": 1,
-  "proba": 0.92,
-  "model_version": "20260413T060654Z-data_v1"
-}
-```
-
-### Example Request
-
-```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{
-    "age": 42,
-    "occupation_status": "employed",
-    "years_employed": 10,
-    "annual_income": 85000.0,
-    "credit_score": 720.0,
-    "credit_history_years": 12,
-    "savings_assets": 15000.0,
-    "current_debt": 12000.0,
-    "defaults_on_file": 0,
-    "delinquencies_last_2yrs": 1,
-    "derogatory_marks": 0,
-    "product_type": "personal",
-    "loan_intent": "debt_consolidation",
-    "loan_amount": 15000.0,
-    "interest_rate": 0.12,
-    "debt_to_income_ratio": 0.18,
-    "loan_to_income_ratio": 0.35,
-    "payment_to_income_ratio": 0.08,
-  }'
-```
-
-## Running Tests
-
-Run all tests:
-
-```bash
-PYTHONPATH=src uv run pytest
-```
-
-Run tests with verbose output:
-
-```bash
-PYTHONPATH=src uv run pytest -v
-```
-
-Run specific test file:
-
-```bash
-PYTHONPATH=src uv run pytest tests/test_api.py
-```
-
-## Model Versioning
-
-Each trained pipeline is versioned with an immutable artifact name following the pattern:
-```
-<model_name>_<YYYY-MM-DD>-<data_fingerprint>_pipeline.joblib
-```
-
-Metadata for each version is tracked in `artifacts/manifest.json`, including:
-- Training dataset version and policy
-- Feature engineering schema version
-- Model performance metrics
-- Training notes and timestamps
-- Active version pointer
-
-When retraining, specify `--dataset-version`, `--training-data-policy`, and `--feature-schema-version` to track versioning metadata automatically.
-
-## Exploration and Statistical Testing
-
-Exploratory analysis and model-comparison rationale are in notebooks under `notebooks/` and summary notes in `model_comparison.md`.
-
-McNemar and bootstrap analyses are best kept in notebooks (or in a dedicated analysis script) rather than the production training path.
-
+DevOps: Docker, Docker Compose, Pytest.
