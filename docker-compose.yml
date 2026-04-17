@@ -4,7 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
     image: creditrisk:latest
-    command: ["python", "-m", "creditrisk.main", "--model", "xgb"]
+    entrypoint: ["python", "-m", "creditrisk.main"]
+    command: ["--model", "xgb"]
+    profiles: ["train"]
     environment:
       CREDITRISK_DATA_DIR: /app/data
       CREDITRISK_ARTIFACTS_DIR: /app/artifacts
@@ -23,9 +25,6 @@ services:
       CREDITRISK_ARTIFACTS_DIR: /app/artifacts
     ports:
       - "8000:8000"
-    depends_on:
-      pipeline:
-        condition: service_completed_successfully
     volumes:
       - ./data:/app/data
       - ./artifacts:/app/artifacts
