@@ -8,6 +8,25 @@ An industry-grade machine learning system designed to automate credit risk adjud
 * Auditability: Maintain an immutable record of model versions, training policies, and feature schemas.
 * Risk-Centric Optimization: Model performance is optimized for the detection of high-risk applicants to minimize potential defaults.
 
+## 📁 Repository Layout
+
+```text
+CreditRisk/
+├── artifacts/         # Saved model pipelines and manifest metadata
+├── data/              # Training and test CSV files
+├── notebooks/         # Exploration, comparison, and analysis notebooks
+├── src/creditrisk/    # Application package
+│   ├── main.py        # Training pipeline entrypoint
+│   ├── api.py         # FastAPI inference service
+│   ├── data.py        # Data loading and type casting
+│   ├── preprocess.py  # Feature engineering and preprocessing
+│   ├── train.py       # Model training helpers
+│   ├── evaluate.py    # Evaluation logic
+│   ├── artifacts.py   # Artifact persistence and versioning
+│   └── logger.py      # Logging setup
+└── tests/             # API and behavior tests
+```
+
 ## 📊 Statistical Validation & Model Comparison
 
 Before moving to production, we performed a comparative analysis between the baseline (Logistic Regression) and the challenger (XGBoost) to ensure the performance gain was not due to random noise.
@@ -43,16 +62,61 @@ API Tests: Automated tests in `tests/test_api.py` validate endpoint responses an
 
 Observability: Structured JSON logging in `api.py` provides an audit trail for every prediction, including the model version and probability score.
 
-## 🚀 Deployment (Docker & Cloud Ready)
-This project is built to eliminate "it works on my machine" issues. The Docker Compose setup orchestrates a sequential workflow:
+## 🧪 Run Training Locally
 
-Pipeline Container: Trains the model and persists the artifact.
-
-API Container: Spins up only after successful training to serve the latest artifact.
+The training pipeline is the same code used by Docker Compose. Run it directly when you want to retrain or experiment with different arguments:
 
 ```bash
-# Build and run the full stack
-docker compose up --build
+uv run python -m creditrisk.main
+```
+
+Pass the same CLI flags you would pass in Compose:
+
+```bash
+uv run python -m creditrisk.main \
+	--model xgb \
+	--data data_v1.csv \
+	--dataset-version data_v1 \
+	--training-data-policy combined \
+	--feature-schema-version v1 \
+	--notes "manual retrain"
+```
+
+Common options:
+
+* `--data`: Training CSV file name under `data/`
+* `--model`: `lr`, `svc`, or `xgb`
+* `--dataset-version`: Version label recorded in the manifest
+* `--training-data-policy`: `initial`, `combined`, or `new_only`
+* `--feature-schema-version`: Feature-engineering version label
+* `--notes`: Free-text run metadata
+* `--no-persist`: Train without writing artifacts
+
+## 🚀 Deployment (Docker & Cloud Ready)
+This project is built to eliminate "it works on my machine" issues while avoiding unnecessary retraining cost in cloud environments.
+
+API Container: Starts independently and serves the latest saved artifact from `artifacts/`.
+
+Pipeline Container (optional): Runs only when you explicitly request training.
+
+```bash
+# Start API only (default; no training)
+docker compose up --build api
+
+# Run one-off training only when needed
+docker compose --profile train run --rm pipeline
+
+# Run one-off training with custom CLI args (same flags as local main.py)
+docker compose --profile train run --rm pipeline --model lr --data data_v1.csv
+
+# Example with additional metadata flags
+docker compose --profile train run --rm pipeline \
+	--model xgb \
+	--data data_v1.csv \
+	--dataset-version data_v1 \
+	--training-data-policy combined \
+	--feature-schema-version v1 \
+	--notes "manual retrain before release"
 ```
 
 ## 🛣 Future Roadmap & Risk Mitigation
