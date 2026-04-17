@@ -149,7 +149,7 @@ Example `/explain` response:
 Production Reliability: Calculate inference latency ($p95$) with 100% environment parity via Docker.
 
 ## 🛠 Tech Stack
-Core: Python 3.11, uv, scikit-learn, XGBoost.
+Core: Python 3.11, uv, scikit-learn, XGBoost, shap.
 
 Serving: FastAPI, Uvicorn, Pydantic.
 
