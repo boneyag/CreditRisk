@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import pandas as pd
 
 from creditrisk.artifacts import get_active_model_metadata, get_active_model_version, load_pipeline
+from creditrisk.explain import explain_prediction
 from creditrisk.preprocess import feature_engineering
 from creditrisk.logger import setup_logger
 
@@ -38,6 +39,23 @@ class PredictionResponse(BaseModel):
     pred: int
     proba: float
     model_version: str
+
+
+class ExplanationItem(BaseModel):
+    feature: str
+    shap_value: float
+    abs_shap_value: float
+
+
+class TransformedExplanationItem(ExplanationItem):
+    pass
+
+
+class ExplanationResponse(PredictionResponse):
+    expected_value: float
+    feature_explanations: list[ExplanationItem]
+    transformed_feature_explanations: list[TransformedExplanationItem]
+    transformed_feature_count: int
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -103,3 +121,35 @@ def model_predict(payload: PredictionRequest):
         proba = float(pred)
 
     return {"pred": pred, "proba": proba, "model_version": ACTIVE_MODEL_VERSION}
+
+
+@app.post("/explain", response_model=ExplanationResponse)
+def model_explain(payload: PredictionRequest):
+    if model_pipeline is None:
+        raise HTTPException(status_code=503, detail="Model is not loaded")
+
+    row = payload.model_dump()
+    df = pd.DataFrame([row])
+    df = feature_engineering(df)
+
+    pred_raw = model_pipeline.predict(df)[0]
+    pred = int(pred_raw)
+
+    if hasattr(model_pipeline, "predict_proba"):
+        proba = float(model_pipeline.predict_proba(df)[0][1])
+    elif hasattr(model_pipeline, "decision_function"):
+        proba = float(model_pipeline.decision_function(df)[0])
+    else:
+        proba = float(pred)
+
+    try:
+        explanation = explain_prediction(model_pipeline, row)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return {
+        "pred": pred,
+        "proba": proba,
+        "model_version": ACTIVE_MODEL_VERSION,
+        **explanation,
+    }
