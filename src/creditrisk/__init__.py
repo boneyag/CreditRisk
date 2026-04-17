@@ -4,4 +4,5 @@ __all__ = [
     "train",
     "evaluate",
     "artifacts",
+    "explain",
 ]

@@ -124,7 +124,27 @@ Cloud Migration: Transitioning compute to AWS Fargate and storage to S3 for high
 
 Observability: Integrating Prometheus metrics to track real-time drift in the debt_to_income_ratio feature.
 
-Explainability: Incorporating SHAP values directly into the /predict response for adjudicator transparency.
+Explainability: Expose SHAP-based feature attributions through a dedicated /explain endpoint for adjudicator transparency.
+
+Example `/explain` response:
+
+```json
+{
+	"pred": 1,
+	"proba": 0.92,
+	"model_version": "20260413T060654Z-data_v1",
+	"expected_value": -0.41,
+	"feature_explanations": [
+		{"feature": "loan_amount", "shap_value": 0.18, "abs_shap_value": 0.18},
+		{"feature": "occupation_status", "shap_value": -0.11, "abs_shap_value": 0.11}
+	],
+	"transformed_feature_explanations": [
+		{"feature": "categorical__occupation_status_employed", "shap_value": -0.09, "abs_shap_value": 0.09},
+		{"feature": "categorical__occupation_status_self_employed", "shap_value": -0.02, "abs_shap_value": 0.02}
+	],
+	"transformed_feature_count": 31
+}
+```
 
 Production Reliability: Calculate inference latency ($p95$) with 100% environment parity via Docker.
 
