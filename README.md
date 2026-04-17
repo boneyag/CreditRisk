@@ -12,6 +12,7 @@ An industry-grade machine learning system designed to automate credit risk adjud
 
 ```text
 CreditRisk/
+├── frontend/          # React + TypeScript inference UI
 ├── artifacts/         # Saved model pipelines and manifest metadata
 ├── data/              # Training and test CSV files
 ├── notebooks/         # Exploration, comparison, and analysis notebooks
@@ -118,6 +119,43 @@ docker compose --profile train run --rm pipeline \
 	--feature-schema-version v1 \
 	--notes "manual retrain before release"
 ```
+
+## 🖥 Inference UI (Frontend)
+The repo includes a Vite + React + TypeScript UI for single-applicant inference and explanation review.
+
+### UI workflow
+* Submit borrower attributes via a validated form (same payload shape as API request model).
+* Call `POST /explain` and display:
+	* prediction summary (`pred`, `proba`, `model_version`)
+	* grouped SHAP attributions (`feature_explanations`)
+	* transformed-column SHAP attributions (`transformed_feature_explanations`)
+
+### Run locally
+```bash
+# Build and run API + frontend together
+docker compose up --build api frontend
+```
+
+The frontend runs as a Vite dev server inside Docker, and Vite proxies `/explain` to the API container over the Compose network.
+
+Direct browser access:
+- Frontend: http://localhost:5173
+- API: http://localhost:8000
+
+If you want to bypass the proxy and call the API directly, set:
+
+```bash
+VITE_API_BASE=http://localhost:8000 npm run dev
+```
+
+## Hosting Pattern
+For local development, this repo can run frontend and backend together in Docker Compose.
+
+For production, they are usually split:
+- Frontend: static hosting or an edge platform like Vercel/Netlify
+- Backend/core logic: API service on a container host or serverless runtime such as Cloud Run, ECS/Fargate, Fly.io, or Render
+
+The frontend should only talk to the backend API. Model inference, SHAP explanation, and any training logic stay in the backend layer or in separate worker jobs.
 
 ## 🛣 Future Roadmap & Risk Mitigation
 Cloud Migration: Transitioning compute to AWS Fargate and storage to S3 for higher scalability.
