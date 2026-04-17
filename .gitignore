@@ -12,6 +12,10 @@ wheels/
 # temp files
 model_comparison.md
 README.md.old
+frontend.md
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
 
 # data files
 data/realistic-loan-approval-dataset-us-and-canada.zip
